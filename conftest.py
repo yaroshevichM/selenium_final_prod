@@ -4,28 +4,29 @@ from selenium.webdriver.chrome.options import Options
 
 
 def pytest_addoption(parser):
-    # задаем опцию для запуска "браузер": если не указать, то запускается Chrome
-    parser.addoption('--browser_name', action='store', default='chrome', help="Choose browser: firefox or chrome")
-    # задаем опцию для запуска "язык": ru, fr и тд.
-    parser.addoption('--language', action='store', default=None, help="Say language name to select")
+    parser.addoption('--browser_name', action='store', default="chrome",
+                     help="Choose browser: chrome or firefox")
+    parser.addoption('--language', action='store', default="en",
+                     help="Choose language")
 
 
 @pytest.fixture(scope="function")
 def browser(request):
-    # считываем язык и браузер (если есть)
-    choosen_language = request.config.getoption("language")
     browser_name = request.config.getoption("browser_name")
+    user_language = request.config.getoption("language")
+    browser = None
     if browser_name == "chrome":
-        # инициализируем браузер chrome с нужными опциями
-        opts = Options()
-        opts.add_experimental_option('prefs', {'intl.accept_languages': choosen_language})
-        opts.add_experimental_option('w3c', False)
-        browser = webdriver.Chrome(options=opts)
+        print("\nstart chrome browser for test..")
+        options = Options()
+        options.add_experimental_option('prefs', {'intl.accept_languages': user_language})
+        browser = webdriver.Chrome(options=options)
     elif browser_name == "firefox":
-        # инициализируем браузер firefox с нужными опциями
+        print("\nstart firefox browser for test..")
         fp = webdriver.FirefoxProfile()
-        fp.set_preference("intl.accept_languages", choosen_language)
+        fp.set_preference("intl.accept_languages", user_language)
         browser = webdriver.Firefox(firefox_profile=fp)
+    else:
+        raise pytest.UsageError("--browser_name should be chrome or firefox")
     yield browser
-    # закрытие браузера после работы
+    print("\nquit browser..")
     browser.quit()
